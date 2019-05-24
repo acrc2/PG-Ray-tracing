@@ -1,7 +1,7 @@
 #comentário
 
-#resolução
-res 100 100
+#resolução 
+res 1024 768 15
 
 #câmera
 camera 0 0 0 0 0 -18 0 1 0 70

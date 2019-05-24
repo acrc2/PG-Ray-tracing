@@ -123,11 +123,12 @@ Vec3f random_in_unit_disk() {
     return p;
 }
  
-void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,float aperture, float focus_dist,const std::vector<Sphere> &spheres, const std::vector<Light> &lights,float nx,float ny) {
+void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,float aperture, 
+float focus_dist,const std::vector<Sphere> &spheres, const std::vector<Light> &lights,
+float nx,float ny, float ns,bool focus) {
     float lens_radius = aperture/2;
     const int   width    = 1024;
     const int   height   = 768;
-    const int   ns       = 1;
     const float fov      = M_PI/180;
     std::vector<Vec3f> framebuffer(width*height);
  
@@ -135,42 +136,59 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
     for (size_t j = 0; j<height; j++) { // actual rendering loop
         for (size_t i = 0; i<width; i++) {
            
-            Vec3f u,v,w;
-            Vec3f col = Vec3f(0,0,0);
-            for (size_t h = 0; h < ns; h++){
+            if(focus){
+                Vec3f u,v,w;
+                Vec3f col = Vec3f(0,0,0);
+                for (size_t h = 0; h < ns; h++){
+                    float theta =  vfov*fov;
+                    float half_height = tan(theta/2);
+                    float half_width =  aspect * half_height;
+                    Vec3f origin = lookfrom;
+                    w = (lookfrom -  lookat).normalize();
+                    u = cross(vup,w).normalize();
+    
+                    v = cross(w,u);
+                    v = -v;
+                    Vec3f lower_left_corner = Vec3f(-half_width,-half_height,-1.0);
+                    lower_left_corner = origin - (u * half_width * focus_dist) - (v * half_height * focus_dist) - w * focus_dist;
+                    Vec3f horizontal =   u * half_width * 2 * focus_dist;
+                    Vec3f vertical = v * half_height * 2 * focus_dist;
+                
+                    float s = (i+drand48())/width;
+                    float t = (j+drand48())/height;
+                    Vec3f rd = random_in_unit_disk() * lens_radius;
+                    Vec3f offset = (u * rd.x) + (v * rd.y);
+                
+    
+                    Vec3f result =  lower_left_corner +  (horizontal * s) + (vertical * t) - origin - offset;
+                    col = col + (cast_ray(lookfrom + offset, result.normalize(), spheres, lights));
+                }
+                col = col * (1/(float)ns);
+                framebuffer[i+j*width] = col;
+            }else{
+                Vec3f u,v,w;
+
                 float theta =  vfov*fov;
                 float half_height = tan(theta/2);
                 float half_width =  aspect * half_height;
                 Vec3f origin = lookfrom;
                 w = (lookfrom -  lookat).normalize();
                 u = cross(vup,w).normalize();
-   
+
                 v = cross(w,u);
                 v = -v;
                 Vec3f lower_left_corner = Vec3f(-half_width,-half_height,-1.0);
-                lower_left_corner = origin - (u * half_width * focus_dist) - (v * half_height * focus_dist) - w * focus_dist;
-                Vec3f horizontal =   u * half_width * 2 * focus_dist;
-                Vec3f vertical = v * half_height * 2 * focus_dist;
-               
-                float s = (i+drand48())/width;
-                float t = (j+drand48())/height;
-                Vec3f rd = random_in_unit_disk() * lens_radius;
-                Vec3f offset = (u * rd.x) + (v * rd.y);
-               
-   
-                Vec3f result =  lower_left_corner +  (horizontal * s) + (vertical * t) - origin - offset;
-                col = col + (cast_ray(lookfrom + offset, result.normalize(), spheres, lights));
-                //result =  - result;
-                /*float dir_x =  (i + 0.5) -  width/2.;
-                float dir_y = -(j + 0.5) + height/2.;    // this flips the image at the same time
-                float dir_z = -height/(2.*tan(fov/2.));*/    
-           
-   
-                //framebuffer[i+j*width] = cast_ray(Vec3f(13,2,3), Vec3f(dir_x, dir_y , dir_z).normalize(), spheres, lights);
+                lower_left_corner = origin - u * half_width - v * half_height -w;
+                Vec3f horizontal =   u * half_width * 2;
+                Vec3f vertical = v * half_height * 2;
+                float s = (i+0.5)/width;
+                float t = (j+0.5)/height;
+                Vec3f result =  lower_left_corner +  horizontal * s + vertical * t - origin;
+
+                framebuffer[i+j*width] = cast_ray(lookfrom, result.normalize(), spheres, lights);
             }
-            col = col * (1/(float)ns);
-            col = Vec3f(sqrt(col[0]),sqrt(col[1]),sqrt(col[2]));
-            framebuffer[i+j*width] = col;
+            
+            
  
         }
     }
@@ -193,7 +211,7 @@ int main() {
     std::ifstream myfile;
     myfile.open("input.txt");
     string s;
-    int nx, ny;
+    int nx, ny, ns;
     float px ,py ,pz, tx, ty, tz, ux, uy, uz,fov;
     std::vector<Sphere> spheres;
     vector<Material> materiais;
@@ -218,7 +236,7 @@ int main() {
         }
         if (r) { //ok!
             r = false;
-            myfile >>trash>> nx >> ny;
+            myfile >>trash>> nx >> ny>>ns;
             //cout<<nx<<" "<<ny<<endl;
         } else if (c) {
             c = false;
@@ -265,9 +283,9 @@ int main() {
     Vec3f lookfrom = Vec3f(px,py,pz);
     Vec3f lookat = Vec3f(tx, ty, tz);
     float dist_to_focus = (lookat - lookfrom).norm();
-    float aperture = 0.05;
+    float aperture = 0.8;
     //Parametros da camera.
-    render(lookfrom,lookat,Vec3f(ux,uy,uz),fov,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny);
+    render(lookfrom,lookat,Vec3f(ux,uy,uz),fov,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny,ns,true);
  
     return 0;
 }
