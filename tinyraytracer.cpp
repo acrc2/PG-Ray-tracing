@@ -6,7 +6,8 @@
 #include <vector>
 #include <algorithm>
 #include "geometry.h"
- 
+
+using namespace std;
 struct Light {
     Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
     Vec3f position;
@@ -14,12 +15,13 @@ struct Light {
 };
  
 struct Material {
-    Material(const float r, const Vec4f &a, const Vec3f &color, const float spec) : refractive_index(r), albedo(a), diffuse_color(color), specular_exponent(spec) {}
-    Material() : refractive_index(1), albedo(1,0,0,0), diffuse_color(), specular_exponent() {}
+    Material(const float r, const Vec4f &a, const Vec3f &color, const float spec, string nome) : refractive_index(r), albedo(a), diffuse_color(color), specular_exponent(spec),nome(nome) {}
+    Material() : refractive_index(1), albedo(1,0,0,0), diffuse_color(), specular_exponent() ,nome(){}
     float refractive_index;
     Vec4f albedo;
     Vec3f diffuse_color;
     float specular_exponent;
+    string nome;
 };
  
 struct Sphere {
@@ -121,11 +123,11 @@ Vec3f random_in_unit_disk() {
     return p;
 }
  
-void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,float aperture, float focus_dist,const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
+void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,float aperture, float focus_dist,const std::vector<Sphere> &spheres, const std::vector<Light> &lights,float nx,float ny) {
     float lens_radius = aperture/2;
     const int   width    = 1024;
     const int   height   = 768;
-    const int   ns       = 10;
+    const int   ns       = 3;
     const float fov      = M_PI/180;
     std::vector<Vec3f> framebuffer(width*height);
  
@@ -188,27 +190,60 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
 }
  
 int main() {
-    Material      ivory(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.4, 0.4, 0.3),   50.);
-    Material      glass(1.5, Vec4f(0.0,  0.5, 0.1, 0.8), Vec3f(0.6, 0.7, 0.8),  125.);
-    Material red_rubber(1.0, Vec4f(0.9,  0.1, 0.0, 0.0), Vec3f(0.3, 0.1, 0.1),   10.);
-    Material     mirror(1.0, Vec4f(0.0, 10.0, 0.8, 0.0), Vec3f(1.0, 1.0, 1.0), 1425.);
-    Material     metal(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.2, 0.1, 0.1), 142.);
-    Material     metal1(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.2, 0.1), 1425.);
-    Material     metal2(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.1, 0.2), 1425.);
- 
-    Material      Bivory(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.1, 0.1),   50.);
- 
+    std::ifstream myfile;
+    myfile.open("input.txt");
+    string s;
+    int nx, ny;
+    float px ,py ,pz, tx, ty, tz, ux, uy, uz;
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(Vec3f(-3,    0,   -16), 2,      ivory));
-    spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2,      red_rubber));
-    spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
-    spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,     mirror));
-    //spheres.push_back(Sphere(Vec3f( 0,    0,   0), 1,     red_rubber));
+    vector<Material> materiais;
  
+    bool r = false, c = false, m = false, o = false;;
  
-    /*spheres.push_back(Sphere(Vec3f( -9,    0,   -18), 4,     metal));
-    spheres.push_back(Sphere(Vec3f( 0,    0,   -18), 4,     metal1));
-    spheres.push_back(Sphere(Vec3f( 9,    0,   -18), 4,     metal2));*/
+    while (getline(myfile, s)) {
+        if (s[0] == '#') {
+            if (s[1] == 'r' || s[1] == 'R') {
+                r = true;
+            } else if (s[1] == 'c' || s[1] == 'C') {
+                c = true;
+            } else if (s[1] == 'm' || s[1] == 'M') {
+                m = true;
+            } else if (s[1] == 'o' || s[1] == 'O') {
+                o = true;
+            }
+        }
+        if (r) {
+            r = false;
+            std::cin >> nx >> ny;
+        } else if (c) {
+            c = false;
+            cin>>px >> py >> pz >> tx >> ty >> tz >> ux >> uy >> uz;
+        } else if (m) {
+            m = false;
+            while (std::cin >> s && s[0] == 'm') {
+                float r,g,b,kd,ks,ke,alpha,IR,kr;
+                string nome;
+                cin >>nome >>r>>g>>b >>kd>>ks>>ke>>alpha>>IR>>kr;
+                materiais.push_back(Material(IR,Vec4f(kd,ke,ks,kr),Vec3f(r,g,b),alpha,nome));
+            }
+        } else if (o) {
+            o = false;
+            while (std::cin >> s && s[1] == 's') {
+                float cx,cy,cz, r;
+                string materialName;
+                cin>>cx>>cy>>cz>>r>>materialName;
+                int pos = -1;
+                for(int index = 0 ; index <materiais.size();index++){
+                    if(materialName == materiais[index].nome){
+                        pos = index;
+                    }
+                }
+                spheres.push_back(Sphere(Vec3f( cx, cy,cz), r, materiais[pos]));
+                
+            }
+        }
+    }
+    myfile.close();
  
     std::vector<Light>  lights;
     lights.push_back(Light(Vec3f(-20, 20,  20), 1.5));
@@ -218,13 +253,11 @@ int main() {
     lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
  
  
-    float nx = 1024;
-    float ny = 768;
-    Vec3f lookfrom = Vec3f(0,0,0);
-    Vec3f lookat = Vec3f(-1.0, -1.5, -12);
+    Vec3f lookfrom = Vec3f(px,py,pz);
+    Vec3f lookat = Vec3f(tx, ty, tz);
     float dist_to_focus = (lookat - lookfrom).norm();
-    float aperture = 0.5;
-    render(lookfrom,lookat,Vec3f(0,1,0),70,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights);
+    float aperture = 0.05;
+    render(lookfrom,lookat,Vec3f(ux,uy,uz),70,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny);
  
     return 0;
 }

@@ -1,0 +1,10 @@
+#comentário
+
+#resolução
+res 100 100
+
+#câmera
+camera 0 0 0 0 0 -18 0 1 0
+
+
+
