@@ -127,7 +127,7 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
     float lens_radius = aperture/2;
     const int   width    = 1024;
     const int   height   = 768;
-    const int   ns       = 4;
+    const int   ns       = 1;
     const float fov      = M_PI/180;
     std::vector<Vec3f> framebuffer(width*height);
  
@@ -169,7 +169,7 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
                 //framebuffer[i+j*width] = cast_ray(Vec3f(13,2,3), Vec3f(dir_x, dir_y , dir_z).normalize(), spheres, lights);
             }
             col = col * (1/(float)ns);
-            //col = Vec3f(sqrt(col[0]),sqrt(col[1]),sqrt(col[2]));
+            col = Vec3f(sqrt(col[0]),sqrt(col[1]),sqrt(col[2]));
             framebuffer[i+j*width] = col;
  
         }
