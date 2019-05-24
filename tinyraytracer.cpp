@@ -127,7 +127,7 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
     float lens_radius = aperture/2;
     const int   width    = 1024;
     const int   height   = 768;
-    const int   ns       = 3;
+    const int   ns       = 4;
     const float fov      = M_PI/180;
     std::vector<Vec3f> framebuffer(width*height);
  
@@ -194,62 +194,71 @@ int main() {
     myfile.open("input.txt");
     string s;
     int nx, ny;
-    float px ,py ,pz, tx, ty, tz, ux, uy, uz;
+    float px ,py ,pz, tx, ty, tz, ux, uy, uz,fov;
     std::vector<Sphere> spheres;
     vector<Material> materiais;
- 
+    string trash;
+    
     bool r = false, c = false, m = false, o = false;;
  
     while (getline(myfile, s)) {
+
+            
+        //cout<<s<<endl;
         if (s[0] == '#') {
             if (s[1] == 'r' || s[1] == 'R') {
                 r = true;
-            } else if (s[1] == 'c' || s[1] == 'C') {
-                c = true;
+            } else if (s[1] == 'c' && s[2] != 'o') {
+                c = true;   
             } else if (s[1] == 'm' || s[1] == 'M') {
                 m = true;
             } else if (s[1] == 'o' || s[1] == 'O') {
                 o = true;
             }
         }
-        if (r) {
+        if (r) { //ok!
             r = false;
-            std::cin >> nx >> ny;
+            myfile >>trash>> nx >> ny;
+            //cout<<nx<<" "<<ny<<endl;
         } else if (c) {
             c = false;
-            cin>>px >> py >> pz >> tx >> ty >> tz >> ux >> uy >> uz;
+            myfile >>trash>>px >> py >> pz >> tx >> ty >> tz >> ux >> uy >> uz >>fov;
+            //cout<<trash<<" "<<px <<" "<< py <<" "<< pz <<" "<< tx <<" "<< ty <<" "<< tz <<" "<< ux <<" "<< uy <<" "<< uz<<" "<<fov;
         } else if (m) {
             m = false;
-            while (std::cin >> s && s[0] == 'm') {
+            while (myfile >> s && s[0] == 'm') {                
                 float r,g,b,kd,ks,ke,alpha,IR,kr;
                 string nome;
-                cin >>nome >>r>>g>>b >>kd>>ks>>ke>>alpha>>IR>>kr;
+                myfile >>nome >>r>>g>>b >>kd>>ks>>ke>>alpha>>IR>>kr;
                 materiais.push_back(Material(IR,Vec4f(kd,ke,ks,kr),Vec3f(r,g,b),alpha,nome));
             }
+            
         } else if (o) {
             o = false;
-            while (std::cin >> s && s[1] == 's') {
+            
+            while (myfile>> s && s[0] == 's') {
                 float cx,cy,cz, r;
                 string materialName;
-                cin>>cx>>cy>>cz>>r>>materialName;
+                myfile>>cx>>cy>>cz>>r>>materialName;
                 int pos = -1;
                 for(int index = 0 ; index <materiais.size();index++){
                     if(materialName == materiais[index].nome){
                         pos = index;
                     }
                 }
+                //cout<<materiais[pos].nome;
                 spheres.push_back(Sphere(Vec3f( cx, cy,cz), r, materiais[pos]));
                 
             }
+
         }
     }
     myfile.close();
+
  
     std::vector<Light>  lights;
     lights.push_back(Light(Vec3f(-20, 20,  20), 1.5));
     lights.push_back(Light(Vec3f( 30, 50, -25), 1.8));
- 
-   
     lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
  
  
@@ -257,7 +266,8 @@ int main() {
     Vec3f lookat = Vec3f(tx, ty, tz);
     float dist_to_focus = (lookat - lookfrom).norm();
     float aperture = 0.05;
-    render(lookfrom,lookat,Vec3f(ux,uy,uz),70,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny);
+    //Parametros da camera.
+    render(lookfrom,lookat,Vec3f(ux,uy,uz),fov,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny);
  
     return 0;
 }
