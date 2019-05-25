@@ -127,8 +127,8 @@ void render(Vec3f lookfrom , Vec3f lookat,Vec3f vup, float vfov, float aspect,fl
 float focus_dist,const std::vector<Sphere> &spheres, const std::vector<Light> &lights,
 float nx,float ny, float ns,bool focus) {
     float lens_radius = aperture/2;
-    const int   width    = 1024;
-    const int   height   = 768;
+    const int   width    = nx;
+    const int   height   = ny;
     const float fov      = M_PI/180;
     std::vector<Vec3f> framebuffer(width*height);
  
@@ -213,6 +213,7 @@ int main() {
     string s;
     int nx, ny, ns;
     float px ,py ,pz, tx, ty, tz, ux, uy, uz,fov;
+    bool f;
     std::vector<Sphere> spheres;
     vector<Material> materiais;
     string trash;
@@ -236,7 +237,7 @@ int main() {
         }
         if (r) { //ok!
             r = false;
-            myfile >>trash>> nx >> ny>>ns;
+            myfile >>trash>> nx >> ny>>ns>>f;
             //cout<<nx<<" "<<ny<<endl;
         } else if (c) {
             c = false;
@@ -285,7 +286,7 @@ int main() {
     float dist_to_focus = (lookat - lookfrom).norm();
     float aperture = 0.8;
     //Parametros da camera.
-    render(lookfrom,lookat,Vec3f(ux,uy,uz),fov,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny,ns,true);
+    render(lookfrom,lookat,Vec3f(ux,uy,uz),fov,float(nx)/float(ny),aperture, dist_to_focus, spheres, lights,nx,ny,ns,f);
  
     return 0;
 }

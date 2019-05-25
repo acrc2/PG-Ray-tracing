@@ -1,17 +1,28 @@
 #comentário
+#.A resolução possui 3 parametros o width, o heigth, o numero de raios disparados do anti-alising, e se o foco esta ativado
+#.a camera possui o ponto que esta posicionada, para onde aponta, o vetor up, e o field of view
+#.Para materiais temos na ordem:
+#. nome r g b kd ke ks  alpha IR kr
+
+#.Já os objetos seguem: x,y,z, material
 
 #resolução 
-res 1024 768 15
+res 1024 768 20 1
 
 #câmera
-camera 0 0 0 0 0 -18 0 1 0 70
+camera 0 0 0 0 -1 -10 0 1 0 70
+
 
 #materiais
 material ivory 0.5 0.1 0.1 0.5 0.3 0.5 50 1.0 0.0
+material mirror 0.1 0.1 0.5 0.0 0.8 0.5 50 1.0 0.0
+material glass 0.1 0.1 0.1 0.0 0.0 0.5 50 1.5 0.8
 #endObjects
 
 
 #objetos
-sphere 0 0 -18 3 ivory
+sphere 4 0 -15 3 ivory
+sphere -4 0 -20 4 mirror
+sphere 0 -1 -10 2 glass
 
 
